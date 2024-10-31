@@ -15,7 +15,7 @@ sequelize
   });
 
 sequelize.sync({ force: false }).then(() => {
-  console.log("local changes injected successfully!");
+  console.log("Synced");
 });
 
 export default sequelize;

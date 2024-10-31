@@ -1,4 +1,4 @@
-import { Column, DataType, Model, Table } from "sequelize-typescript";
+import { Column, DataType, Model, Table, Unique } from "sequelize-typescript";
 
 @Table({
   tableName: "users",
@@ -9,13 +9,12 @@ class User extends Model {
   @Column({
     primaryKey: true,
     type: DataType.UUID,
-    defaultValue: DataType.UUID,
+    defaultValue: DataType.UUIDV4,
   })
   declare id?: string;
 
   @Column({
     type: DataType.STRING,
-    unique: true,
   })
   declare username: string;
 
@@ -24,6 +23,12 @@ class User extends Model {
     unique: true,
   })
   declare email: string;
+
+  @Column({
+    type: DataType.STRING,
+    unique: true,
+  })
+  declare phoneNo: string;
 
   @Column({
     type: DataType.STRING,
