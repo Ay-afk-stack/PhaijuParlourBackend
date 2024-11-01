@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import User from "../database/models/userModel";
+import bcrypt from "bcrypt";
 
 class UserController {
   static async register(req: Request, res: Response) {
-    const { username, email, password, phoneNo, role } = req.body;
+    const { username, email, password, phoneNo } = req.body;
 
     if (!username || !email || !phoneNo || !password) {
       res
@@ -12,7 +13,12 @@ class UserController {
       return;
     }
     try {
-      await User.create({ username, email, phoneNo, password, role });
+      await User.create({
+        username,
+        email,
+        phoneNo,
+        password: bcrypt.hashSync(password, 10),
+      });
       res
         .status(201)
         .json({ success: true, message: "User registered successfully!" });
