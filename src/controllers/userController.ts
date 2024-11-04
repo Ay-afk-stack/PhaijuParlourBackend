@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../database/models/userModel";
 import bcrypt from "bcrypt";
+import generateToken from "../services/generateToken";
 
 class UserController {
   static async register(req: Request, res: Response) {
@@ -50,7 +51,10 @@ class UserController {
             .status(400)
             .json({ success: false, message: "Invalid Credentials" });
         } else {
-          res.status(200).json({ success: true, message: "Login Successful!" });
+          const token = generateToken(user.id as string, user.email as string);
+          res
+            .status(200)
+            .json({ success: true, message: "Login Successful!", token });
         }
       }
     } catch (error) {
