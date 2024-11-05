@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import User from "../database/models/userModel";
 import bcrypt from "bcrypt";
 import generateToken from "../services/generateToken";
+import generateOTP from "../services/generateOTP";
+import sendMail from "../services/sendMail";
 
 class UserController {
   static async register(req: Request, res: Response) {
@@ -20,6 +22,28 @@ class UserController {
         phoneNo,
         password: bcrypt.hashSync(password, 10),
       });
+
+      await sendMail({
+        to: email,
+        subject: "Registration Successful!",
+        html: `<div style='font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2'>
+  <div style='margin:50px auto;width:70%;padding:20px 0'>
+    <div style='border-bottom:1px solid #eee'>
+      <a style='font-size:1.4em;color: #00466a;text-decoration:none;font-weight:600'>Phaiju Parlour</a>
+    </div>
+    <p style='font-size:1.1em'>Hi ${username},</p>
+    <p>Thank you for choosing our parlour. Your account is registered successfully!</p>
+    <p style='font-size:0.9em;'>Regards,<br />Phaiju Parlour</p>
+    <hr style='border:none;border-top:1px solid #eee' />
+    <div style='float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300'>
+      <p>Ayush Phaiju</p>
+      <p>Faika,Kapan</p>
+      <p>+977 9812312322</p>
+    </div>
+  </div>
+</div>`,
+      });
+
       res
         .status(201)
         .json({ success: true, message: "User registered successfully!" });
@@ -59,6 +83,55 @@ class UserController {
       }
     } catch (error) {
       console.error(error);
+    }
+  }
+  static async handleForgotPassword(req: Request, res: Response) {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ success: false, message: "Enter your email!" });
+      return;
+    }
+    try {
+      const [user] = await User.findAll({ where: { email: email } });
+      if (!user) {
+        res
+          .status(404)
+          .json({ success: false, message: "Email not registered!" });
+      } else {
+        const otp = generateOTP();
+
+        user.otp = otp.toString();
+        user.otpGeneratedTime = Date.now().toString();
+
+        await user.save();
+        await sendMail({
+          to: email,
+          subject: "Password Reset",
+          html: `<div style='font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2'>
+  <div style='margin:50px auto;width:70%;padding:20px 0'>
+    <div style='border-bottom:1px solid #eee'>
+      <a style='font-size:1.4em;color: #00466a;text-decoration:none;font-weight:600'>Phaiju Parlour</a>
+    </div>
+    <p style='font-size:1.1em'>Hi,</p>
+    <p>Thank you for choosing our parlour. Use the following OTP to complete your reset your password. OTP is valid for 5 minutes.</p>
+    <h2 style='background: #00466a;margin: 0 auto;width: max-content;padding: 5px 15px;color: #fff;border-radius: 4px;'>${otp}</h2>
+    <p style='font-size:0.9em;'>Regards,<br />Phaiju Parlour</p>
+    <hr style='border:none;border-top:1px solid #eee' />
+    <div style='float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300'>
+      <p>Ayush Phaiju</p>
+      <p>Faika,Kapan</p>
+      <p>+977 9812312322</p>
+    </div>
+  </div>
+</div>`,
+        });
+        res
+          .status(200)
+          .json({ success: true, message: "OTP sent successfully!", otp });
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(404).json({ success: false, message: "OTP not send" });
     }
   }
 }
