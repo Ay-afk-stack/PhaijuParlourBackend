@@ -12,9 +12,7 @@ class UserController {
     const { username, email, password, phoneNo } = req.body;
 
     if (!username || !email || !phoneNo || !password) {
-      res
-        .status(400)
-        .json({ success: false, message: "Please fill all the fields!" });
+      sendResponse(res, 400, false, "Enter all the fields");
       return;
     }
     try {
@@ -45,21 +43,16 @@ class UserController {
   </div>
 </div>`,
       });
-
-      res
-        .status(201)
-        .json({ success: true, message: "User registered successfully!" });
+      sendResponse(res, 201, true, "User registered successfully!");
     } catch (error) {
       console.error("Error:", error);
+      sendResponse(res, 500, false, "Server Error");
     }
   }
   static async login(req: Request, res: Response) {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        message: "Please enter credentials!",
-      });
+      sendResponse(res, 400, false, "Please enter all the fields!");
       return;
     }
 
@@ -67,24 +60,19 @@ class UserController {
       const [user] = await User.findAll({ where: { email: email } });
 
       if (!user) {
-        res
-          .status(404)
-          .json({ success: false, messsage: "No user found with that email!" });
+        sendResponse(res, 404, false, "Email not registered!");
       } else {
         const isEqual = bcrypt.compareSync(password, user.password);
         if (!isEqual) {
-          res
-            .status(400)
-            .json({ success: false, message: "Invalid Credentials" });
+          sendResponse(res, 400, false, "Invalid credentials");
         } else {
           const token = generateToken(user.id as string, user.email as string);
-          res
-            .status(200)
-            .json({ success: true, message: "Login Successful!", token });
+          sendResponse(res, 200, true, "Login Successful!", { token });
         }
       }
     } catch (error) {
       console.error(error);
+      sendResponse(res, 500, false, "Server Error");
     }
   }
   static async handleForgotPassword(req: Request, res: Response) {
@@ -96,9 +84,7 @@ class UserController {
     try {
       const [user] = await User.findAll({ where: { email: email } });
       if (!user) {
-        res
-          .status(404)
-          .json({ success: false, message: "Email not registered!" });
+        sendResponse(res, 404, false, "Email not registered");
       } else {
         const otp = generateOTP();
 
@@ -127,13 +113,11 @@ class UserController {
   </div>
 </div>`,
         });
-        res
-          .status(200)
-          .json({ success: true, message: "OTP sent successfully!", otp });
+        sendResponse(res, 200, true, "OTP sent successfully", { otp });
       }
     } catch (err) {
       console.error(err);
-      res.status(404).json({ success: false, message: "OTP not send" });
+      sendResponse(res, 404, false, "OTP not sent");
     }
   }
   static async verifyOTP(req: Request, res: Response) {
